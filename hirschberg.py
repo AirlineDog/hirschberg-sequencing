@@ -4,7 +4,6 @@ import argparse
 my_parser = argparse.ArgumentParser()
 my_parser.add_argument('-t', action='store_const', const=True, help="Print (i,j)")
 my_parser.add_argument('-f', action='store_const', const=True, help="Read txt")
-my_parser.add_argument('-l', action='store_const', const=True, help="lines")
 my_parser.add_argument('g')
 my_parser.add_argument('m')
 my_parser.add_argument('d')
@@ -15,8 +14,14 @@ args = my_parser.parse_args()
 g = int(args.g)
 m = int(args.m)
 d = int(args.d)
-a = args.a
-b = args.b
+if args.f:
+    with open(args.a, 'r') as f:
+        a = f.read()
+    with open(args.b, 'r') as f:
+        b = f.read()
+else:
+    a = args.a
+    b = args.b
 
 
 def needleman_wunsch(A, B):
@@ -62,7 +67,7 @@ def enumerate_alignments(A, B, F, W, Z, WW, ZZ):
     return WW, ZZ
 
 
-def compute_allignment_score(A, B):
+def compute_alignment_score(A, B):
     L = [0 for _ in range(len(B) + 1)]
     for j in range(len(L)):
         L[j] = g * j
@@ -90,7 +95,7 @@ def update_alignments(WW, ZZ, WW_l, WW_r, ZZ_l, ZZ_r):
             temp = "".join(temp)
             ZZ.append(temp)
     duplicate = []
-    for i in range(len(WW)-1):
+    for i in range(len(WW) - 1):
         for j in range(i + 1, len(WW)):
             if WW[i] == WW[j] and ZZ[i] == ZZ[j]:
                 duplicate += [(i, j)]
@@ -113,15 +118,15 @@ def hirschberg(A, B):
         WW, ZZ = needleman_wunsch(A, B)
     else:
         i = len(A) // 2
-        S_l = compute_allignment_score(A[0:i], B)
-        S_r = compute_allignment_score(A[i:][::-1], B[::-1])
-        S = [S_l[x] + S_r[len(S_r)-1 - x] for x in range(len(S_l))]
+        S_l = compute_alignment_score(A[0:i], B)
+        S_r = compute_alignment_score(A[i:][::-1], B[::-1])
+        S = [S_l[x] + S_r[len(S_r) - 1 - x] for x in range(len(S_l))]
         J = [index for index, element in enumerate(S) if element == max(S)]
         WW = []
         ZZ = []
         for j in J:
             if args.t:
-                print(i, j)
+                print(str(i) + ", " + str(j))
             WW_l, ZZ_l = hirschberg(A[0:i], B[0:j])
             WW_r, ZZ_r = hirschberg(A[i:len(A)], B[j:len(B)])
             WW, ZZ = update_alignments(WW, ZZ, WW_l, WW_r, ZZ_l, ZZ_r)
